@@ -177,23 +177,23 @@ const VectorDBPage = () => {
             alert("Por favor, ingresa un enlace válido.");
             return;
         }
-
+    
         setLinkProgress(0);
         setIsUploading(true);
-
+    
         try {
             const response = await fetch(backendUrl + '/get_links', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ link }),
+                body: JSON.stringify({ url: link }),
             });
-
+    
             if (!response.ok) {
                 throw new Error('Error al obtener los enlaces');
             }
-
+    
             const data = await response.json();
             setFetchedLinks(data.links);
             setIsLinkModalOpen(true);
