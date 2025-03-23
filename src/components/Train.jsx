@@ -25,7 +25,7 @@ const VectorDBPage = () => {
     const [fetchedLinks, setFetchedLinks] = useState([]);
     const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
     const [selectedLinks, setSelectedLinks] = useState([]);
-
+    const [baseUrl, setBaseUrl] = useState(""); // Nuevo estado para base_url
     const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
     useEffect(() => {
@@ -177,10 +177,10 @@ const VectorDBPage = () => {
             alert("Por favor, ingresa un enlace válido.");
             return;
         }
-    
+
         setLinkProgress(0);
         setIsUploading(true);
-    
+
         try {
             const response = await fetch(backendUrl + '/get_links', {
                 method: 'POST',
@@ -189,11 +189,11 @@ const VectorDBPage = () => {
                 },
                 body: JSON.stringify({ url: link }),
             });
-    
+
             if (!response.ok) {
                 throw new Error('Error al obtener los enlaces');
             }
-    
+
             const data = await response.json();
             setFetchedLinks(data.links);
             setIsLinkModalOpen(true);
@@ -238,33 +238,37 @@ const VectorDBPage = () => {
             alert("Por favor, selecciona al menos un enlace.");
             return;
         }
-    
-        // Extract the `link` values from the selectedLinks array
+
+        if (!baseUrl) {
+            alert("Por favor, ingresa una URL base.");
+            return;
+        }
+
         const linksPayload = selectedLinks.map((item) => item.link);
-    
-        // Log the payload for debugging
-        console.log("Payload being sent:", { links: linksPayload });
-    
+
         setLinkProgress(0);
         setIsUploading(true);
-    
+
         try {
             const response = await fetch(backendUrl + '/scrape_and_embed', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ links: linksPayload }), // Send the correct payload
+                body: JSON.stringify({ 
+                    links: linksPayload,
+                    base_url: baseUrl // Incluir base_url en la solicitud
+                }),
             });
-    
+
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.detail || "Error uploading links");
             }
-    
+
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
-    
+
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) {
@@ -274,13 +278,13 @@ const VectorDBPage = () => {
                     onFileListRefresh();
                     break;
                 }
-    
+
                 const data = decoder.decode(value);
                 const { totalLinks, linksProcessed } = JSON.parse(data);
                 const currentProgress = (linksProcessed / totalLinks) * 100;
                 setLinkProgress(currentProgress);
             }
-    
+
             alert("Enlaces subidos correctamente");
         } catch (error) {
             console.error("Error al subir los enlaces:", error);
@@ -303,6 +307,7 @@ const VectorDBPage = () => {
                 <div className="p-6">
                     <div className="grid grid-cols-3 gap-4">
                         <div className="col-span-2 grid gap-4 border rounded-lg p-6">
+                            {/* Lista de archivos */}
                             <div className="relative">
                                 <button
                                     onClick={onFileListRefresh}
@@ -325,9 +330,9 @@ const VectorDBPage = () => {
                                     ))}
                                 </ul>
                             </div>
-
+    
+                            {/* Área de arrastrar y soltar archivos */}
                             <label className="block text-sm font-medium text-gray-700">Upload Files:</label>
-
                             <div
                                 className={`relative border-2 border-dashed rounded-lg p-6 ${
                                     isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
@@ -363,6 +368,8 @@ const VectorDBPage = () => {
                                     </div>
                                 )}
                             </div>
+    
+                            {/* Campo para ingresar enlace */}
                             <div className="mt-4">
                                 <label className="block text-sm font-medium text-gray-700">Ingresar Enlace:</label>
                                 <div className="flex items-center gap-2">
@@ -381,7 +388,8 @@ const VectorDBPage = () => {
                                 </div>
                             </div>
                         </div>
-                        
+    
+                        {/* Botón de subir archivos */}
                         <button
                             onClick={onStartUpload}
                             disabled={isUploading || selectedFiles.length === 0}
@@ -390,11 +398,8 @@ const VectorDBPage = () => {
                             <span className="text-2xl">📤</span>
                         </button>
                     </div>
-                    <div>
-                        <form>
-                            <input type="text" />
-                        </form>
-                    </div>
+    
+                    {/* Barra de progreso para subida de archivos */}
                     {isUploading && (
                         <div className="mt-4">
                             <label className="block text-sm font-medium text-gray-700">File Name: {filename}</label>
@@ -409,55 +414,72 @@ const VectorDBPage = () => {
                             </div>
                         </div>
                     )}
+    
+                    {/* Modal para seleccionar enlaces */}
                     {isLinkModalOpen && (
+                        <div
+                            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
+                            onClick={handleCloseModal}
+                        >
                             <div
-                                className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
-                                onClick={handleCloseModal} // Cerrar al hacer clic fuera
+                                className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
+                                onClick={(e) => e.stopPropagation()}
                             >
-                                <div
-                                    className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
-                                    onClick={(e) => e.stopPropagation()} // Evitar que el clic dentro del modal lo cierre
-                                >
-                                    {/* Encabezado del modal */}
-                                    <div className="flex justify-between items-center p-4 border-b">
-                                        <h2 className="text-xl font-bold">🌐 Selecciona los enlaces para subir</h2>
-                                        <button
-                                            onClick={handleCloseModal}
-                                            className="text-gray-500 hover:text-gray-700"
-                                        >
-                                            ✖️
-                                        </button>
+                                {/* Encabezado del modal */}
+                                <div className="flex justify-between items-center p-4 border-b">
+                                    <h2 className="text-xl font-bold">🌐 Selecciona los enlaces para subir</h2>
+                                    <button
+                                        onClick={handleCloseModal}
+                                        className="text-gray-500 hover:text-gray-700"
+                                    >
+                                        ✖️
+                                    </button>
+                                </div>
+    
+                                {/* Lista de enlaces */}
+                                <div className="overflow-y-auto p-4">
+                                    {/* Campo para ingresar la URL base */}
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-gray-700">URL Base:</label>
+                                        <input
+                                            type="text"
+                                            value={baseUrl}
+                                            onChange={(e) => setBaseUrl(e.target.value)}
+                                            placeholder="https://example.com"
+                                            className="mt-1 w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
                                     </div>
-
-                                    {/* Lista de enlaces con scroll */}
-                                    <div className="overflow-y-auto p-4">
-                                        <ul className="space-y-2">
-                                            {fetchedLinks.map((link, index) => (
-                                                <li key={index} className="flex items-center gap-2">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={selectedLinks.some((item) => item.link === link)} // Verificar si el enlace está seleccionado
-                                                        onChange={() => handleLinkSelection(link)} // Manejar la selección
-                                                        className="w-4 h-4"
-                                                    />
-                                                    <span className="text-sm break-all">{link}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-
-                                    {/* Pie del modal */}
-                                    <div className="flex justify-end gap-2 p-4 border-t">
-                                        <button
-                                            onClick={handleLinkUpload}
-                                            className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600"
-                                        >
-                                            📤 Subir seleccionados
-                                        </button>
-                                    </div>
+    
+                                    <ul className="space-y-2">
+                                        {fetchedLinks.map((link, index) => (
+                                            <li key={index} className="flex items-center gap-2">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedLinks.some((item) => item.link === link)}
+                                                    onChange={() => handleLinkSelection(link)}
+                                                    className="w-4 h-4"
+                                                />
+                                                <span className="text-sm break-all">{link}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+    
+                                {/* Pie del modal */}
+                                <div className="flex justify-end gap-2 p-4 border-t">
+                                    <button
+                                        onClick={handleLinkUpload}
+                                        disabled={!baseUrl || selectedLinks.length === 0}
+                                        className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
+                                    >
+                                        📤 Subir seleccionados
+                                    </button>
                                 </div>
                             </div>
-                        )}
+                        </div>
+                    )}
+    
+                    {/* Barra de progreso para subida de enlaces */}
                     {isUploading && (
                         <div className="mt-4">
                             <label className="block text-sm font-medium text-gray-700">Progreso de enlaces: {linkProgress}%</label>
