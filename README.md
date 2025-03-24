@@ -349,11 +349,24 @@ unstructured==0.12.2
 huggingface_hub==0.20.2
 ```
 
-### C. Contacto
-**Desarrollador**: Carlos Roberto Rocha Trejo  
-- GitHub: [@RobertoRochaT](https://github.com/RobertoRochaT)
-- LinkedIn: [carlosr-rocha](https://linkedin.com/in/carlosr-rocha)
+### C. Información del Contribuidor
+
+**Contribuidor Principal**:  
+**Carlos Roberto Rocha Trejo**  
+- **GitHub**: [@RobertoRochaT](https://github.com/RobertoRochaT)  
+- **LinkedIn**: [Carlos Roberto Rocha Trejo](https://linkedin.com/in/carlosr-rocha)  
+- **Rol**: Desarrollador.
+- **Contribuciones**:
+  - Integración de modelos de lenguaje avanzados (LLMs) y sistemas de recuperación de información (RAG).  
+  - Desarrollo de la API RESTful y WebSockets para comunicación en tiempo real.  
+  - Implementación de la base de datos vectorial (ChromaDB) y persistencia en MongoDB.  
+  - Optimización del contenedor Docker para despliegue en Hugging Face Spaces.  
 
 ---
 
-Este manual se actualiza continuamente.
+**Agradecimientos Especiales**:  
+Agradecemos a todos los colaboradores y a la comunidad de código abierto por su invaluable apoyo en el desarrollo de este proyecto. Su dedicación y expertise han sido fundamentales para el éxito de esta iniciativa.  
+
+---
+
+Este manual y el proyecto son mantenidos activamente por el equipo de desarrollo. ¡Gracias por tu interés en Chatbot Laguna! 🚀
