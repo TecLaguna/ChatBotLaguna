@@ -330,7 +330,7 @@ os.environ['SSL_CERT_FILE'] = certifi.where()
 
 ---
 
-## 11. Apéndices <a name="apéndices"></a>
+## 10. Apéndices <a name="apéndices"></a>
 
 ### A. Diagrama de Arquitectura
 ```
