@@ -25,7 +25,7 @@ const VectorDBPage = () => {
     const [fetchedLinks, setFetchedLinks] = useState([]);
     const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
     const [selectedLinks, setSelectedLinks] = useState([]);
-    const [baseUrl, setBaseUrl] = useState(""); // Nuevo estado para base_url
+    const [baseUrl, setBaseUrl] = useState("");
     const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
     useEffect(() => {
@@ -208,48 +208,48 @@ const VectorDBPage = () => {
     const handleCloseModal = () => {
         setIsLinkModalOpen(false);
         console.log(selectedLinks);
-        setSelectedLinks([]); // Limpiar enlaces seleccionados al cerrar
+        setSelectedLinks([]);
     };
 
     const handleLinkSelection = (link) => {
         const newSelectedLinks = [...selectedLinks];
-        const linkObject = { link }; // Convertir el enlace en un objeto con la clave "link"
+        const linkObject = { link };
     
-        // Verificar si el enlace ya está seleccionado
         const isLinkSelected = newSelectedLinks.some((item) => item.link === link);
     
         if (isLinkSelected) {
-            // Si el enlace ya está seleccionado, eliminarlo
             newSelectedLinks.splice(
                 newSelectedLinks.findIndex((item) => item.link === link),
                 1
             );
         } else {
-            // Si no está seleccionado, agregarlo
             newSelectedLinks.push(linkObject);
         }
     
         setSelectedLinks(newSelectedLinks);
     };
-    
 
     const handleLinkUpload = async () => {
         if (selectedLinks.length === 0) {
             alert("Por favor, selecciona al menos un enlace.");
             return;
         }
-
+    
         if (!baseUrl) {
             alert("Por favor, ingresa una URL base.");
             return;
         }
-
-        const linksPayload = selectedLinks.map((item) => item.link);
-
+    
+        console.log("Enlaces seleccionados para subir:", selectedLinks.map(item => item.link));
+        console.log("URL base:", baseUrl);
+    
         setLinkProgress(0);
         setIsUploading(true);
-
+    
         try {
+            const linksPayload = selectedLinks.map((item) => item.link);
+            console.log("Preparando para enviar:", { links: linksPayload, base_url: baseUrl });
+    
             const response = await fetch(backendUrl + '/scrape_and_embed', {
                 method: 'POST',
                 headers: {
@@ -257,34 +257,43 @@ const VectorDBPage = () => {
                 },
                 body: JSON.stringify({ 
                     links: linksPayload,
-                    base_url: baseUrl // Incluir base_url en la solicitud
+                    base_url: baseUrl
                 }),
             });
-
+    
             if (!response.ok) {
                 const errorData = await response.json();
+                console.error("Error en la respuesta del servidor:", errorData);
                 throw new Error(errorData.detail || "Error uploading links");
             }
-
+    
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
-
+    
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) {
+                    console.log("Proceso de subida completado");
                     setIsUploading(false);
                     setSelectedLinks([]);
                     setIsLinkModalOpen(false);
                     onFileListRefresh();
                     break;
                 }
-
+    
                 const data = decoder.decode(value);
-                const { totalLinks, linksProcessed } = JSON.parse(data);
-                const currentProgress = (linksProcessed / totalLinks) * 100;
-                setLinkProgress(currentProgress);
+                console.log("Datos recibidos del servidor:", data);
+                
+                try {
+                    const { totalLinks, linksProcessed } = JSON.parse(data);
+                    const currentProgress = (linksProcessed / totalLinks) * 100;
+                    setLinkProgress(currentProgress);
+                    console.log(`Progreso: ${currentProgress}% - Procesados ${linksProcessed} de ${totalLinks} enlaces`);
+                } catch (parseError) {
+                    console.error("Error al parsear los datos del servidor:", parseError);
+                }
             }
-
+    
             alert("Enlaces subidos correctamente");
         } catch (error) {
             console.error("Error al subir los enlaces:", error);
@@ -292,7 +301,6 @@ const VectorDBPage = () => {
         } finally {
             setIsUploading(false);
             setSelectedLinks([]);
-            setIsLinkModalOpen(false);
             onFileListRefresh();
         }
     };
@@ -307,7 +315,6 @@ const VectorDBPage = () => {
                 <div className="p-6">
                     <div className="grid grid-cols-3 gap-4">
                         <div className="col-span-2 grid gap-4 border rounded-lg p-6">
-                            {/* Lista de archivos */}
                             <div className="relative">
                                 <button
                                     onClick={onFileListRefresh}
@@ -331,8 +338,6 @@ const VectorDBPage = () => {
                                 </ul>
                             </div>
     
-                            {/* Área de arrastrar y soltar archivos */}
-                            <label className="block text-sm font-medium text-gray-700">Upload Files:</label>
                             <div
                                 className={`relative border-2 border-dashed rounded-lg p-6 ${
                                     isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
@@ -369,7 +374,6 @@ const VectorDBPage = () => {
                                 )}
                             </div>
     
-                            {/* Campo para ingresar enlace */}
                             <div className="mt-4">
                                 <label className="block text-sm font-medium text-gray-700">Ingresar Enlace:</label>
                                 <div className="flex items-center gap-2">
@@ -389,7 +393,6 @@ const VectorDBPage = () => {
                             </div>
                         </div>
     
-                        {/* Botón de subir archivos */}
                         <button
                             onClick={onStartUpload}
                             disabled={isUploading || selectedFiles.length === 0}
@@ -399,7 +402,6 @@ const VectorDBPage = () => {
                         </button>
                     </div>
     
-                    {/* Barra de progreso para subida de archivos */}
                     {isUploading && (
                         <div className="mt-4">
                             <label className="block text-sm font-medium text-gray-700">File Name: {filename}</label>
@@ -415,7 +417,6 @@ const VectorDBPage = () => {
                         </div>
                     )}
     
-                    {/* Modal para seleccionar enlaces */}
                     {isLinkModalOpen && (
                         <div
                             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
@@ -425,20 +426,18 @@ const VectorDBPage = () => {
                                 className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
                                 onClick={(e) => e.stopPropagation()}
                             >
-                                {/* Encabezado del modal */}
                                 <div className="flex justify-between items-center p-4 border-b">
                                     <h2 className="text-xl font-bold">🌐 Selecciona los enlaces para subir</h2>
                                     <button
                                         onClick={handleCloseModal}
                                         className="text-gray-500 hover:text-gray-700"
+                                        disabled={isUploading} // Deshabilitar el botón de cerrar durante la subida
                                     >
                                         ✖️
                                     </button>
                                 </div>
-    
-                                {/* Lista de enlaces */}
+
                                 <div className="overflow-y-auto p-4">
-                                    {/* Campo para ingresar la URL base */}
                                     <div className="mb-4">
                                         <label className="block text-sm font-medium text-gray-700">URL Base:</label>
                                         <input
@@ -447,53 +446,65 @@ const VectorDBPage = () => {
                                             onChange={(e) => setBaseUrl(e.target.value)}
                                             placeholder="https://example.com"
                                             className="mt-1 w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            disabled={isUploading} // Deshabilitar el input durante la subida
                                         />
                                     </div>
-    
+
                                     <ul className="space-y-2">
                                         {fetchedLinks.map((link, index) => (
                                             <li key={index} className="flex items-center gap-2">
                                                 <input
                                                     type="checkbox"
                                                     checked={selectedLinks.some((item) => item.link === link)}
-                                                    onChange={() => handleLinkSelection(link)}
+                                                    onChange={() => !isUploading && handleLinkSelection(link)} // Solo permitir cambios si no se está subiendo
                                                     className="w-4 h-4"
+                                                    disabled={isUploading} // Deshabilitar los checkboxes durante la subida
                                                 />
                                                 <span className="text-sm break-all">{link}</span>
                                             </li>
                                         ))}
                                     </ul>
                                 </div>
-    
-                                {/* Pie del modal */}
-                                <div className="flex justify-end gap-2 p-4 border-t">
-                                    <button
-                                        onClick={handleLinkUpload}
-                                        disabled={!baseUrl || selectedLinks.length === 0}
-                                        className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
-                                    >
-                                        📤 Subir seleccionados
-                                    </button>
+
+                                <div className="p-4 border-t">
+                                    {/* Barra de progreso siempre visible cuando se está subiendo */}
+                                    {isUploading && (
+                                        <div className="mb-4">
+                                            <div className="flex justify-between mb-1">
+                                                <span className="text-sm font-medium text-gray-700">Progreso de subida</span>
+                                                <span className="text-sm font-medium text-gray-700">{Math.round(linkProgress)}%</span>
+                                            </div>
+                                            <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                                <div
+                                                    className="bg-blue-500 h-2.5 rounded-full"
+                                                    style={{ width: `${linkProgress}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                    
+                                    <div className="flex justify-end gap-2">
+                                        <button
+                                            onClick={handleCloseModal}
+                                            className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                                            disabled={isUploading} // Deshabilitar durante la subida
+                                        >
+                                            Cancelar
+                                        </button>
+                                        <button
+                                            onClick={handleLinkUpload}
+                                            disabled={!baseUrl || selectedLinks.length === 0 || isUploading} // Deshabilitar si no hay baseUrl, enlaces seleccionados o ya se está subiendo
+                                            className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
+                                        >
+                                            {isUploading ? 'Subiendo...' : '📤 Subir seleccionados'}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     )}
     
-                    {/* Barra de progreso para subida de enlaces */}
-                    {isUploading && (
-                        <div className="mt-4">
-                            <label className="block text-sm font-medium text-gray-700">Progreso de enlaces: {linkProgress}%</label>
-                            <div className="flex items-center gap-4 mt-2">
-                                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                                    <div
-                                        className="bg-blue-500 h-2.5 rounded-full"
-                                        style={{ width: `${linkProgress}%` }}
-                                    />
-                                </div>
-                                <span className="text-xl animate-spin">🌀</span>
-                            </div>
-                        </div>
-                    )}
+                    
                 </div>
             </div>
         </main>

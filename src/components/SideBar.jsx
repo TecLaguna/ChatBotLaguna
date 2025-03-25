@@ -87,7 +87,25 @@ const SideBar = () => {
               data-bs-parent="#sidebar-nav"
             >
             </ul>
-        </li>
+         </li>
+         <li className="nav-item mb-2">
+            <a
+              className="nav-link flex items-center p-2 hover:bg-gray-700 rounded"
+              data-bs-target="#components-nav"
+              data-bs-toggle="collapse"
+              href="/intent"
+            >
+              <i className="bi bi-menu-button-wide mr-2"></i>
+              <span>Intent classifier 😇</span>
+              <i className="bi bi-chevron-down ml-auto"></i>
+            </a>
+            <ul
+              id="components-nav"
+              className="nav-content collapse pl-4"
+              data-bs-parent="#sidebar-nav"
+            >
+            </ul>
+         </li>
 
           <li className="nav-heading mt-6 mb-2 text-sm font-semibold text-gray-400 uppercase">
             Pages
